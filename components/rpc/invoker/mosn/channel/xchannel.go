@@ -75,6 +75,7 @@ func (m *xChannel) Do(req *rpc.RPCRequest) (*rpc.RPCResponse, error) {
 
 	// encode request
 	frame := m.proto.ToFrame(req)
+	rawRequestID := frame.GetRequestId()
 	id := atomic.AddUint64(&xstate.reqid, 1)
 	frame.SetRequestId(id)
 	buf, encErr := m.proto.Encode(req.Ctx, frame)
@@ -105,6 +106,7 @@ func (m *xChannel) Do(req *rpc.RPCRequest) (*rpc.RPCResponse, error) {
 
 	select {
 	case resp := <-respChan:
+		resp.SetRequestId(rawRequestID)
 		return m.proto.FromFrame(resp)
 	case <-ctx.Done():
 		m.removeRespChan(xstate, id)
